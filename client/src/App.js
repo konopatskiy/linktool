@@ -1,24 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { useTable, usePagination } from 'react-table';
+import { useTable, usePagination, useSortBy } from 'react-table';
+import LoadingBar from 'react-top-loading-bar';
 import './App.css'; // Import the CSS file
 
 const App = () => {
   const [products, setProducts] = useState([]);
   const [file, setFile] = useState(null);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false); // State for loading
+  const ref = useRef(null); // Ref for the loading bar
 
   useEffect(() => {
     fetchProducts();
   }, []);
 
   const fetchProducts = async () => {
+    setLoading(true);
+    ref.current.continuousStart();
     try {
       const response = await axios.get('/api/products');
       setProducts(response.data);
     } catch (error) {
       console.error('Error fetching products:', error);
       setError('Error fetching products');
+    } finally {
+      ref.current.complete();
+      setLoading(false);
     }
   };
 
@@ -27,6 +35,8 @@ const App = () => {
     const formData = new FormData();
     formData.append('file', file);
 
+    setLoading(true);
+    ref.current.continuousStart();
     try {
       await axios.post('/api/import', formData, {
         headers: {
@@ -37,6 +47,9 @@ const App = () => {
     } catch (error) {
       console.error('Error importing CSV:', error);
       setError('Error importing CSV');
+    } finally {
+      ref.current.complete();
+      setLoading(false);
     }
   };
 
@@ -134,11 +147,13 @@ const App = () => {
       initialState: { pageIndex: 0, pageSize: 50 }, // Set initial page size to 50
       updateMyData,
     },
+    useSortBy, // Add useSortBy hook
     usePagination
   );
 
   return (
     <div>
+      <LoadingBar color="#1abc9c" ref={ref} height={5} /> {/* Set height to 5px */}
       <h1>Product Catalog</h1>
       {error && <p style={{ color: 'red' }}>{error}</p>}
       <form onSubmit={importCsv}>
@@ -199,7 +214,16 @@ const App = () => {
           {headerGroups.map(headerGroup => (
             <tr {...headerGroup.getHeaderGroupProps()}>
               {headerGroup.headers.map(column => (
-                <th {...column.getHeaderProps()}>{column.render('Header')}</th>
+                <th {...column.getHeaderProps(column.getSortByToggleProps())}>
+                  {column.render('Header')}
+                  <span>
+                    {column.isSorted
+                      ? column.isSortedDesc
+                        ? ' 🔽'
+                        : ' 🔼'
+                      : ''}
+                  </span>
+                </th>
               ))}
             </tr>
           ))}
