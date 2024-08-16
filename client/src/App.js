@@ -111,7 +111,8 @@ const App = () => {
 
   const data = React.useMemo(() => products, [products]);
 
-  const updateMyData = (rowIndex, columnId, value) => {
+  const updateMyData = async (rowIndex, columnId, value) => {
+    // Update the local state
     setProducts(old =>
       old.map((row, index) => {
         if (index === rowIndex) {
@@ -123,6 +124,23 @@ const App = () => {
         return row;
       })
     );
+
+    // Send the updated data to the server
+    try {
+      const updatedRow = products[rowIndex];
+      const response = await axios.post('/api/update', {
+        id: updatedRow.id, // Assuming 'id' is the primary key
+        [columnId]: value
+      });
+
+      if (response.status === 200) {
+        console.log('Data saved successfully');
+      } else {
+        console.error('Error saving data:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Error saving data:', error);
+    }
   };
 
   const {
