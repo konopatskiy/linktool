@@ -144,7 +144,7 @@ const App = () => {
     {
       columns,
       data,
-      initialState: { pageIndex: 0, pageSize: 50 }, // Set initial page size to 50
+      initialState: { pageIndex: 0, pageSize: 30 }, // Set initial page size to 30
       updateMyData,
     },
     useSortBy, // Add useSortBy hook
@@ -153,7 +153,7 @@ const App = () => {
 
   return (
     <div>
-      <LoadingBar color="#1abc9c" ref={ref} height={5} /> {/* Set height to 5px */}
+      <LoadingBar color="#1abc9c" ref={ref} height={15} /> {/* Set height to 15px */}
       <h1>Product Catalog</h1>
       {error && <p style={{ color: 'red' }}>{error}</p>}
       <form onSubmit={importCsv}>
