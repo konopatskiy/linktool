@@ -1,0 +1,23 @@
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background-color: #c0c0c0; /* Windows 95 gray */
+  display: flex;
+  justify-content: center;
+  border-top: 2px solid #808080; /* Windows 95 border */
+  padding: 10px 0;
+}
+
+.bottom-nav a {
+  margin: 0 15px;
+  text-decoration: none;
+  color: #000;
+  font-family: 'MS Sans Serif', sans-serif; /* Windows 95 font */
+  font-size: 14px;
+}
+
+.bottom-nav a.active {
+  font-weight: bold;
+  color: #000080; /* Windows 95 active color */
+}

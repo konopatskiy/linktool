@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { useTable, usePagination, useSortBy } from 'react-table';
 import LoadingBar from 'react-top-loading-bar';
+import BottomNav from './BottomNav';
+import Home from './Home';
+import ImportCsv from './ImportCsv';
 import './App.css'; // Import the CSS file
 
 const App = () => {
   const [products, setProducts] = useState([]);
-  const [file, setFile] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false); // State for loading
   const ref = useRef(null); // Ref for the loading bar
@@ -24,29 +27,6 @@ const App = () => {
     } catch (error) {
       console.error('Error fetching products:', error);
       setError('Error fetching products');
-    } finally {
-      ref.current.complete();
-      setLoading(false);
-    }
-  };
-
-  const importCsv = async (e) => {
-    e.preventDefault();
-    const formData = new FormData();
-    formData.append('file', file);
-
-    setLoading(true);
-    ref.current.continuousStart();
-    try {
-      await axios.post('/api/import', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-      fetchProducts();
-    } catch (error) {
-      console.error('Error importing CSV:', error);
-      setError('Error importing CSV');
     } finally {
       ref.current.complete();
       setLoading(false);
@@ -170,96 +150,99 @@ const App = () => {
   );
 
   return (
-    <div>
-      <LoadingBar color="#1abc9c" ref={ref} height={15} /> {/* Set height to 15px */}
-      <h1>Product Catalog</h1>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      <form onSubmit={importCsv}>
-        <input
-          type="file"
-          accept=".csv"
-          onChange={(e) => setFile(e.target.files[0])}
-        />
-        <button type="submit">Import CSV</button>
-      </form>
-      <button onClick={fetchProducts}>Show All Contents</button>
-      <div className="pagination">
-        <button onClick={() => gotoPage(0)} disabled={!canPreviousPage}>
-          {'<<'}
-        </button>
-        <button onClick={() => previousPage()} disabled={!canPreviousPage}>
-          {'<'}
-        </button>
-        <button onClick={() => nextPage()} disabled={!canNextPage}>
-          {'>'}
-        </button>
-        <button onClick={() => gotoPage(pageCount - 1)} disabled={!canNextPage}>
-          {'>>'}
-        </button>
-        <span>
-          Page{' '}
-          <strong>
-            {pageIndex + 1} of {pageOptions.length}
-          </strong>{' '}
-        </span>
-        <span>
-          | Go to page:{' '}
-          <input
-            type="number"
-            defaultValue={pageIndex + 1}
-            onChange={e => {
-              const page = e.target.value ? Number(e.target.value) - 1 : 0;
-              gotoPage(page);
-            }}
-            style={{ width: '100px' }}
-          />
-        </span>{' '}
-        <select
-          value={pageSize}
-          onChange={e => {
-            setPageSize(Number(e.target.value));
-          }}
-        >
-          {[10, 20, 30, 40, 50].map(pageSize => (
-            <option key={pageSize} value={pageSize}>
-              Show {pageSize}
-            </option>
-          ))}
-        </select>
+    <Router>
+      <div>
+        <LoadingBar color="#1abc9c" ref={ref} height={15} /> {/* Set height to 15px */}
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/products" element={
+            <div>
+              <h1>Product Catalog</h1>
+              {error && <p style={{ color: 'red' }}>{error}</p>}
+              <button onClick={fetchProducts}>Show All Contents</button>
+              <div className="pagination">
+                <button onClick={() => gotoPage(0)} disabled={!canPreviousPage}>
+                  {'<<'}
+                </button>
+                <button onClick={() => previousPage()} disabled={!canPreviousPage}>
+                  {'<'}
+                </button>
+                <button onClick={() => nextPage()} disabled={!canNextPage}>
+                  {'>'}
+                </button>
+                <button onClick={() => gotoPage(pageCount - 1)} disabled={!canNextPage}>
+                  {'>>'}
+                </button>
+                <span>
+                  Page{' '}
+                  <strong>
+                    {pageIndex + 1} of {pageOptions.length}
+                  </strong>{' '}
+                </span>
+                <span>
+                  | Go to page:{' '}
+                  <input
+                    type="number"
+                    defaultValue={pageIndex + 1}
+                    onChange={e => {
+                      const page = e.target.value ? Number(e.target.value) - 1 : 0;
+                      gotoPage(page);
+                    }}
+                    style={{ width: '100px' }}
+                  />
+                </span>{' '}
+                <select
+                  value={pageSize}
+                  onChange={e => {
+                    setPageSize(Number(e.target.value));
+                  }}
+                >
+                  {[10, 20, 30, 40, 50].map(pageSize => (
+                    <option key={pageSize} value={pageSize}>
+                      Show {pageSize}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <table {...getTableProps()}>
+                <thead>
+                  {headerGroups.map(headerGroup => (
+                    <tr {...headerGroup.getHeaderGroupProps()}>
+                      {headerGroup.headers.map(column => (
+                        <th {...column.getHeaderProps(column.getSortByToggleProps())}>
+                          {column.render('Header')}
+                          <span>
+                            {column.isSorted
+                              ? column.isSortedDesc
+                                ? ' 🔽'
+                                : ' 🔼'
+                              : ''}
+                          </span>
+                        </th>
+                      ))}
+                    </tr>
+                  ))}
+                </thead>
+                <tbody {...getTableBodyProps()}>
+                  {page.map(row => {
+                    prepareRow(row);
+                    return (
+                      <tr {...row.getRowProps()}>
+                        {row.cells.map(cell => (
+                          <td {...cell.getCellProps()}>{cell.render('Cell')}</td>
+                        ))}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          } />
+          <Route path="/import" element={<ImportCsv fetchProducts={fetchProducts} />} />
+        </Routes>
+        <BottomNav />
       </div>
-      <table {...getTableProps()}>
-        <thead>
-          {headerGroups.map(headerGroup => (
-            <tr {...headerGroup.getHeaderGroupProps()}>
-              {headerGroup.headers.map(column => (
-                <th {...column.getHeaderProps(column.getSortByToggleProps())}>
-                  {column.render('Header')}
-                  <span>
-                    {column.isSorted
-                      ? column.isSortedDesc
-                        ? ' 🔽'
-                        : ' 🔼'
-                      : ''}
-                  </span>
-                </th>
-              ))}
-            </tr>
-          ))}
-        </thead>
-        <tbody {...getTableBodyProps()}>
-          {page.map(row => {
-            prepareRow(row);
-            return (
-              <tr {...row.getRowProps()}>
-                {row.cells.map(cell => (
-                  <td {...cell.getCellProps()}>{cell.render('Cell')}</td>
-                ))}
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+    </Router>
   );
 };
 
